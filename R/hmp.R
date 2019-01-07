@@ -1,21 +1,20 @@
 library(FMStable)
-hmp.stat = function(p, w = NULL) {
-  p = as.numeric(p)
-  if(is.null(w)) return(c("hmp.stat"=1/mean(1/p)))
-  if(abs(sum(w)-1)>1e-6) warning("Weights do not sum to one, renormalizing")
-  w = w/sum(w)
-  return(c("hmp.stat"=1/sum(w/p)))
+hmp.stat = function (p, w = NULL) {
+	p = as.numeric(p)
+	if (is.null(w)) return(c(hmp.stat = 1/mean(1/p)))
+	return(c(hmp.stat = sum(w)/sum(w/p)))
 }
-p.hmp = function(p, w = NULL) {
-  HMP = hmp.stat(p, w)
-  O.874 = 1+digamma(1)-log(2/pi)
-  return(c("p.hmp"=pEstable(1/HMP,setParam(alpha=1,location=(log(length(p))+O.874),logscale=log(pi/2),pm=0),lower.tail=FALSE)))
+p.hmp = function (p, w = NULL) {
+	if(length(p)==0) return(NA)
+	HMP = hmp.stat(p, w)
+	O.874 = 1 + digamma(1) - log(2/pi)
+	return(c(p.hmp = pEstable(1/HMP, setParam(alpha = 1, location = (log(length(p)) + O.874),
+	logscale = log(pi/2), pm = 0), lower.tail = FALSE)))
 }
 mamml.stat = function(R, w = NULL) {
   R = as.numeric(R)
   if(any(R<1)) stop("Maximized likelihood ratios cannot be less than one")
   if(is.null(w)) return(c("mamml.stat"=mean(R)))
-  if(abs(sum(w)-1)>1e-6) warning("Weights do not sum to one, renormalizing")
   w = w/sum(w)
   return(c("mamml.stat"=sum(w*R)))
 }
@@ -33,3 +32,10 @@ p.mamml = function(R, nu, w = NULL) {
   O.874 = 1+digamma(1)-log(2/pi)
   return(c("p.mamml"=pEstable(Rbar,setParam(alpha=1,location=c*(log(length(R))+O.874),logscale=log(pi/2*c),pm=0),lower.tail=FALSE)))
 }
+pharmonicmeanp = Vectorize(function(x, L, log=FALSE, lower.tail=TRUE) {
+	return(pLandau(1/x, mu=log(L)+1+psigamma(1)-log(2/pi), sigma=pi/2, log=log, lower.tail=!lower.tail))
+})
+pLandau = Vectorize(function(x,mu=log(pi/2),sigma=pi/2,log=FALSE,lower.tail=TRUE) {
+	param = setParam(alpha=1, location=mu, logscale=log(sigma), pm=0)
+	return(pEstable(x,param,log=log,lower.tail=lower.tail))
+})

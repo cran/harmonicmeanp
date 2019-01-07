@@ -14,14 +14,14 @@ mamml.stat(R, w = NULL)
 A numeric vector of one or more maximized likelihood ratios. Missing values (NAs) will cause a missing value to be returned.
 }
   \item{w}{
-An optional numeric vector of weights that can be interpreted as prior model probabilities for each of the alternative hypotheses represented by the individual \emph{p}-values. If specified, it should sum to one.
+An optional numeric vector of weights that can be interpreted as prior model probabilities for each of the alternative hypotheses represented by the individual \emph{p}-values. The sum of the weights cannot exceed one but may be less than one, which is interpreted as meaning that some \emph{p}-values have been excluded.
 }
 }
 \value{
 The model-averaged mean maximized likelihood ratio is returned.
 }
 \references{
-Daniel J. Wilson (2017) The harmonic mean \emph{p}-value and model averaging by mean maximum likelihood. In preparation.
+Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA}, in press.
 }
 \author{
 Daniel J. Wilson
@@ -31,6 +31,7 @@ Daniel J. Wilson
 p.mamml
 }
 \examples{
+# For detailed examples type vignette("harmonicmeanp")
 nu = 3
 R = exp(0.5*rchisq(1000,nu))
 mamml.stat(R)
