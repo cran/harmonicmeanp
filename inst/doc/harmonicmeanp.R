@@ -1,68 +1,82 @@
-## ----require-------------------------------------------------------------
+## ----setup, include=FALSE------------------------------------------------
+knitr::opts_chunk$set(strip.white=FALSE,class.output="Routput",class.source="Rsource")
+
+## ----installation, exercise=TRUE, eval=FALSE-----------------------------
+#  install.packages("harmonicmeanp")
+
+## ----require, exercise=TRUE----------------------------------------------
 library(harmonicmeanp)
 
-## ----download------------------------------------------------------------
+## ----download, exercise=TRUE---------------------------------------------
 system.time((gwas = read.delim("http://www.danielwilson.me.uk/files/Neuroticism_ch12.txt",
   header=TRUE,as.is=TRUE)))
 head(gwas)
 
-## ----HMP-----------------------------------------------------------------
-gwas$w = 1/6524432
+## ----HMP, exercise=TRUE--------------------------------------------------
+L = 6524432
+gwas$w = 1/L
 R = 1:nrow(gwas)
 (HMP.R = sum(gwas$w[R])/sum(gwas$w[R]/gwas$p[R]))
 
-## ----phmp----------------------------------------------------------------
+## ----hmpthreshold, exercise=TRUE-----------------------------------------
+# Specify the false positive rate
+alpha = 0.05
+# Compute the HMP significance threshold
+(alpha.L = qharmonicmeanp(alpha, L))
+
+## ----hmpthresholdadjust, exercise=TRUE-----------------------------------
+# Test whether the HMP for subset R is significance
+w.R = sum(gwas$w[R])
+alpha.L * w.R
+
+## ----phmp, exercise=TRUE-------------------------------------------------
 # Use p.hmp instead to compute the HMP test statistic and
 # calculate its asymptotically exact p-value in one step
-pharmonicmeanp(HMP.R, L=length(R), lower.tail=TRUE)
+pharmonicmeanp(HMP.R, L=L, lower.tail=TRUE)
 
-## ----p.hmp---------------------------------------------------------------
+## ----p.hmp, exercise=TRUE------------------------------------------------
+# Note that the p.hmp function has been redefined to take argument L. Omitting L will issue a warning.
 R = 1:nrow(gwas)
-p.hmp(gwas$p[R],gwas$w[R])
+p.hmp(gwas$p[R],gwas$w[R],L)
 
-## ----adjust--------------------------------------------------------------
-alpha = 0.05
-w.R = sum(gwas$w[R])
-alpha*w.R
-
-## ----oddsevens-----------------------------------------------------------
+## ----oddsevens, exercise=TRUE--------------------------------------------
 R = which(gwas$pos%%2==0)
-p.hmp(gwas$p[R],gwas$w[R])
+p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 alpha*w.R
 R = which(gwas$pos%%2==1)
-p.hmp(gwas$p[R],gwas$w[R])
+p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 alpha*w.R
 
-## ----oddsevens.adjust----------------------------------------------------
+## ----oddsevens.adjust, exercise=TRUE-------------------------------------
 R = which(gwas$pos%%2==0)
-p.R = p.hmp(gwas$p[R],gwas$w[R])
+p.R = p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 R = which(gwas$pos%%2==1)
-p.R = p.hmp(gwas$p[R],gwas$w[R])
+p.R = p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 
-## ----twohalves-----------------------------------------------------------
+## ----twohalves, exercise=TRUE--------------------------------------------
 R = 1:156229
-p.R = p.hmp(gwas$p[R],gwas$w[R])
+p.R = p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 R = 156230:312457
-p.R = p.hmp(gwas$p[R],gwas$w[R])
+p.R = p.hmp(gwas$p[R],gwas$w[R],L)
 w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 
-## ----win-----------------------------------------------------------------
+## ----win, exercise=TRUE--------------------------------------------------
 # Define overlapping sliding windows of 1 megabase at 0.2 megabase intervals
 win.1M.beg = outer(0:floor(max(gwas$pos/1e6)),(0:4)/5,"+")*1e6
 # Calculate the combined p-values for each window
 system.time({
   p.1M = apply(win.1M.beg,c(1,2),function(beg) {
     R = which(gwas$pos>=beg & gwas$pos<(beg+1e6))
-    p.hmp(gwas$p[R],gwas$w[R])
+    p.hmp(gwas$p[R],gwas$w[R],L)
   })
 })
 # Calculate sums of weights for each combined test
@@ -75,7 +89,7 @@ system.time({
 # Calculate adjusted p-value for each window
 p.1M.adj = p.1M/w.1M 
 
-## ----winplot, fig.width=7, fig.height=5----------------------------------
+## ----winplot, exercise=TRUE, fig.width=7, fig.height=5-------------------
 # Took a few seconds, plotting over 312k points
 gwas$p.adj = gwas$p/gwas$w
 plot(gwas$pos/1e6,-log10(gwas$p.adj),pch=".",xlab="Position on chromosome 12 (megabases)",
@@ -91,49 +105,49 @@ abline(h=-log10(0.05),col="black",lty=2)
 # 5e-8*L = 5e-8 * 6524432 = 0.3262216
 abline(h=-log10(0.3262216),col="grey",lty=3) 
 
-## ----listpos-------------------------------------------------------------
+## ----listpos, exercise=TRUE----------------------------------------------
 win.1M.beg[which(p.1M.adj<=0.05)]
 # Also list the position of the most significant individual (adjusted) p-value
 (peakpos = gwas$pos[gwas$p.adj==min(gwas$p.adj)])
 
-## ----winlengths----------------------------------------------------------
+## ----winlengths, exercise=TRUE-------------------------------------------
 # Window of 100 base pairs
 wlen = 100
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 # Window of 1 kilobase
 wlen = 1e3
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 # Window of 10 kilobases
 wlen = 1e4
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 # Window of 100 kilobases
 wlen = 1e5
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 # Window of 1 megabase
 wlen = 1e6
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 
-## ----optwin--------------------------------------------------------------
+## ----optwin, exercise=TRUE-----------------------------------------------
 # Find the smallest window centred on position 118876918 significant at alpha=0.05
 f = function(wlen) {
   R = which(abs(gwas$pos-peakpos)<wlen)
-  p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R])
+  p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R])
   return(p.R.adjust - 0.05)
 }
 (wlen.opt = uniroot(f,c(1e5,1e6))$root)
 # Show that the group of SNPs in this window is indeed significant
 wlen = wlen.opt
 R = which(abs(gwas$pos-peakpos)<wlen)
-(p.R.adjust = p.hmp(gwas$p[R])/sum(gwas$w[R]))
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 # The number of individual SNPs included in this group
 length(R)
 
-## ----fiddler, fig.width=4, fig.height=4----------------------------------
+## ----fiddler, exercise=TRUE, fig.width=4, fig.height=4-------------------
 # Load the ape package for reading and plotting the tree
 library(ape)
 tree = read.tree((PIPE=pipe(
@@ -148,7 +162,7 @@ log.propodus.length = c("chlorophthalmus"=1.38,"crassipes"=1.41,"inversa"=1.36,
 
 plot(log.propodus.length ~ log.carapace.breadth)
 
-## ----dataframe-----------------------------------------------------------
+## ----dataframe, exercise=TRUE--------------------------------------------
 # Convert branches in the tree into informative 'partitions'
 informative.partitions = function(tree) {
   n = length(tree$tip.label)
@@ -167,7 +181,7 @@ partition = informative.partitions(tree)
 # Create a data frame combining all the information
 Uca = data.frame(log.propodus.length,log.carapace.breadth,partition)
 
-## ----models--------------------------------------------------------------
+## ----models, exercise=TRUE-----------------------------------------------
 # Claw size does not vary by species
 m0 = formula(log.propodus.length ~ 1) # grand null
 # Claw size is associated with body size and there is no phylogenetic correlation
@@ -187,7 +201,7 @@ m7 = formula(log.propodus.length ~ log.carapace.breadth + node.A + node.B) # gra
 # List the alternatives together
 mA = list(m1,m2,m3,m4,m5,m6,m7)
 
-## ----pairwisetests-------------------------------------------------------
+## ----pairwisetests, exercise=TRUE----------------------------------------
 # Output p-values from all tests for the inclusion of the primary regressor
 pairwise.p = function(response,primary,data) {
   # Define a model space including the grand null
@@ -224,53 +238,56 @@ pairwise.p = function(response,primary,data) {
 # Calculate the p-values from all tests for the inclusion of log.carapace.breadth
 (p = pairwise.p(response="log.propodus.length",primary="log.carapace.breadth",data=Uca))
 
-## ----hmpbodysize---------------------------------------------------------
+## ----hmpbodysize, exercise=TRUE------------------------------------------
 # Specify the weight of each test, assuming equal weights
-ntotaltests = 12
-(w = rep(1/ntotaltests,length(p)))
+L = 12
+(w = rep(1/L,length(p)))
 # Calculate the model-averaged (asymptotically exact) HMP
-(p.comb = p.hmp(p,w))
+(p.comb = p.hmp(p,w,L))
 # Sum the weights of the constituent tests
 (w.comb = sum(w))
 # Calculate an adjusted model-averaged p-value for comparison to the ssFWER alpha
 (p.comb.adj = p.comb/w.comb)
 
-## ----bonferronibodysize--------------------------------------------------
-(p.adj = unlist(p)/w)
-(p.Bonf = min(p.adj))
+## ----bonferronibodysize, exercise=TRUE-----------------------------------
+(p.HMP.adj = Vectorize(p.hmp)(p,w,L)/w)
+(p.Bonf.adj = unlist(p)/w)
+(p.Bonf = min(p.Bonf.adj))
 
-## ----hmpnodeAB-----------------------------------------------------------
+## ----hmpnodeAB, exercise=TRUE--------------------------------------------
 # Is there a significant difference in claw size between the descendants of ancestor A
 # and other species?
 p = pairwise.p(response="log.propodus.length",primary="node.A",data=Uca)
-w = rep(1/ntotaltests,length(p))
-p.hmp(p,w)/sum(w)
-# Individual tests and Bonferroni
+w = rep(1/L,length(p))
+p.hmp(p,w,L)/sum(w)
+# Individual tests: HMP and Bonferroni
+(p.hmp.adj = Vectorize(p.hmp)(p,w,L)/w)
 (p.adj = unlist(p)/w)
 (p.Bonf = min(p.adj))
 # Is there a significant difference in claw size between the descendants of ancestor B
 # and other species?
 p = pairwise.p(response="log.propodus.length",primary="node.B",data=Uca)
-w = rep(1/ntotaltests,length(p))
-p.hmp(p,w)/sum(w)
-# Individual tests and Bonferroni
+w = rep(1/L,length(p))
+p.hmp(p,w,L)/sum(w)
+# Individual tests: HMP and Bonferroni
+(p.hmp.adj = Vectorize(p.hmp)(p,w,L)/w)
 (p.adj = unlist(p)/w)
 (p.Bonf = min(p.adj))
 
-## ------------------------------------------------------------------------
+## ----ppairwise, exercise=TRUE--------------------------------------------
 p = c(
   unlist(pairwise.p(response="log.propodus.length",primary="log.carapace.breadth",data=Uca)),
   unlist(pairwise.p(response="log.propodus.length",primary="node.A",data=Uca)),
   unlist(pairwise.p(response="log.propodus.length",primary="node.B",data=Uca)))
 
-## ------------------------------------------------------------------------
+## ----terms, exercise=TRUE------------------------------------------------
 terms = lapply(names(p),function(s) labels(terms(as.formula(gsub("\\[|\\]","",s,perl=TRUE)))))
 (nterms = unlist(lapply(terms,length)))
 (s = ncol(Uca)-1)
 (m = 1/s)
 (mu = m^nterms * (1-m)^(s-nterms))
 
-## ------------------------------------------------------------------------
+## ----test.term, exercise=TRUE--------------------------------------------
 test.term = sapply(names(p),function(s) 
   gsub("\\[|\\]","",regmatches(s,regexpr("\\[.*?\\]",s,perl=TRUE)),perl=TRUE)
 )
@@ -312,27 +329,27 @@ lambda = uniroot(lambdafunc,lambda*c(0.1,1.1),0.05)$root
 sum(w)
 if(abs(1-sum(w))>1e-4) stop("weights do not sum to one, check")
 
-## ------------------------------------------------------------------------
+## ----wvsunw, exercise=TRUE-----------------------------------------------
 # Compare the weighted and unweighted results
 wequal = rep(1/length(w),length(w))
 # For log.carapace.breadth
 incl = which(test.term == "log.carapace.breadth")
-c("weighted"=p.hmp(p[incl],w[incl])/sum(w[incl]),
-  "unweighted"=p.hmp(p[incl],wequal[incl])/sum(wequal[incl]))
+c("weighted"=p.hmp(p[incl],w[incl],L)/sum(w[incl]),
+  "unweighted"=p.hmp(p[incl],wequal[incl],L)/sum(wequal[incl]))
 # For node.A
 incl = which(test.term == "node.A")
-c("weighted"=p.hmp(p[incl],w[incl])/sum(w[incl]),
-  "unweighted"=p.hmp(p[incl],wequal[incl])/sum(wequal[incl]))
+c("weighted"=p.hmp(p[incl],w[incl],L)/sum(w[incl]),
+  "unweighted"=p.hmp(p[incl],wequal[incl],L)/sum(wequal[incl]))
 # For node.B
 incl = which(test.term == "node.B")
-c("weighted"=p.hmp(p[incl],w[incl])/sum(w[incl]),
-  "unweighted"=p.hmp(p[incl],wequal[incl])/sum(wequal[incl]))
+c("weighted"=p.hmp(p[incl],w[incl],L)/sum(w[incl]),
+  "unweighted"=p.hmp(p[incl],wequal[incl],L)/sum(wequal[incl]))
 # Headline
 incl = 1:length(p)
-c("weighted"=p.hmp(p[incl],w[incl])/sum(w[incl]),
-  "unweighted"=p.hmp(p[incl],wequal[incl])/sum(wequal[incl]))
+c("weighted"=p.hmp(p[incl],w[incl],L)/sum(w[incl]),
+  "unweighted"=p.hmp(p[incl],wequal[incl],L)/sum(wequal[incl]))
 
-## ----enumerateallmodels--------------------------------------------------
+## ----enumerateallmodels, exercise=TRUE-----------------------------------
 enumerate.models = function(response,data) {
   # Define the response variable
   rid = which(colnames(data)==response)

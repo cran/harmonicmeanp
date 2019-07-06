@@ -1,7 +1,7 @@
-\name{mamml.stat}
+\name{Compute the Model-Averaged Mean Maximized Likelihood}
 \alias{mamml.stat}
 \title{
-Compute the model-averaged mean maximized likelihood
+Compute the Model-Averaged Mean Maximized Likelihood
 }
 \description{
 The model-averaged mean maximized likelihood (MAMML) is defined as the (possibly weighted) arithmetic mean of the maximized likelihood ratios from a series of likelihood ratio tests comparing mutually exclusive alternative hypotheses with the same nested null hypothesis based on the exact same data.
@@ -21,7 +21,7 @@ An optional numeric vector of weights that can be interpreted as prior model pro
 The model-averaged mean maximized likelihood ratio is returned.
 }
 \references{
-Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA}, in press.
+Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA} 116: 1195-1200.
 }
 \author{
 Daniel J. Wilson
@@ -35,6 +35,6 @@ p.mamml
 nu = 3
 R = exp(0.5*rchisq(1000,nu))
 mamml.stat(R)
-p.mamml(R,nu)
+p.mamml(R,nu,L=1000)
 }
 \keyword{ ~MAMML }

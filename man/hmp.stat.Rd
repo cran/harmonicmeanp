@@ -1,7 +1,7 @@
-\name{hmp.stat}
+\name{Compute the Harmonic Mean p-Value}
 \alias{hmp.stat}
 \title{
-Compute the harmonic mean \emph{p}-value
+Compute the Harmonic Mean \emph{p}-Value
 }
 \description{
 The harmonic mean \emph{p}-value (HMP) is defined as the inverse of the (possibly weighted) arithmetic mean of the inverse \emph{p}-values. When the HMP is small (e.g. less than 0.05), it is approximately well-calibrated, meaning that it can be directly interpreted. However, the function p.hmp calculates an exact \emph{p}-value from the HMP and is preferred.
@@ -21,7 +21,7 @@ An optional numeric vector of weights that can be interpreted as prior model pro
 The harmonic mean \emph{p}-value is returned.
 }
 \references{
-Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA}, in press.
+Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA} 116: 1195-1200.
 }
 \author{
 Daniel J. Wilson
@@ -34,6 +34,6 @@ p.hmp
 # For detailed examples type vignette("harmonicmeanp")
 p = rbeta(1000,1/1.5,1)
 hmp.stat(p)
-p.hmp(p)
+p.hmp(p,L=1000)
 }
 \keyword{ ~hmp }

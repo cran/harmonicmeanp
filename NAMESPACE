@@ -1,5 +1,3 @@
 importFrom("stats", "pgamma")
 import("FMStable")
-import("knitr")
-import("ape")
 exportPattern("^[[:alpha:]]+")
