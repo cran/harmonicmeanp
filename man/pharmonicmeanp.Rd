@@ -38,6 +38,8 @@ The number of values to simulate.
 \value{
 \code{dharmonicmeanp} produces the density, \code{pharmonicmeanp} the tail probability, \code{qharmonicmeanp} the quantile and \code{rharmonicmeanp} random variates for the harmonic mean of \emph{L} \emph{p}-values when their null hypotheses are true.
 
+Use \code{qharmonicmeanp(alpha,L)} to calculate \eqn{\alpha_L}, the `harmonic mean \emph{p}-value threshold', as in Table 1 of Wilson (2019, corrected), where \code{L} is the total number of \emph{p}-values under consideration and \code{alpha} is the intended strong-sense familywise error rate.
+
 }
 \references{
 Daniel J. Wilson (2019) The harmonic mean \emph{p}-value for combining dependent tests. \emph{Proceedings of the National Academy of Sciences USA} 116: 1195-1200.

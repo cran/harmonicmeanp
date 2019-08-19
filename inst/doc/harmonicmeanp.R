@@ -7,6 +7,9 @@ knitr::opts_chunk$set(strip.white=FALSE,class.output="Routput",class.source="Rso
 ## ----require, exercise=TRUE----------------------------------------------
 library(harmonicmeanp)
 
+## ----checkversion, exercise=TRUE, eval=FALSE-----------------------------
+#  stopifnot(packageVersion("harmonicmeanp")>=3.0)
+
 ## ----download, exercise=TRUE---------------------------------------------
 system.time((gwas = read.delim("http://www.danielwilson.me.uk/files/Neuroticism_ch12.txt",
   header=TRUE,as.is=TRUE)))
@@ -32,7 +35,10 @@ alpha.L * w.R
 ## ----phmp, exercise=TRUE-------------------------------------------------
 # Use p.hmp instead to compute the HMP test statistic and
 # calculate its asymptotically exact p-value in one step
-pharmonicmeanp(HMP.R, L=L, lower.tail=TRUE)
+# Note this line has changed because of a previous error.
+w.R*pharmonicmeanp(HMP.R/w.R, L=L, lower.tail=TRUE)
+# Compare it to the multiple testing threshold
+w.R*alpha
 
 ## ----p.hmp, exercise=TRUE------------------------------------------------
 # Note that the p.hmp function has been redefined to take argument L. Omitting L will issue a warning.
@@ -70,34 +76,38 @@ w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 
 ## ----win, exercise=TRUE--------------------------------------------------
-# Define overlapping sliding windows of 1 megabase at 0.2 megabase intervals
-win.1M.beg = outer(0:floor(max(gwas$pos/1e6)),(0:4)/5,"+")*1e6
+# Define overlapping sliding windows of 50 megabase at 10 megabase intervals
+win.50M.beg = outer(0:floor(max(gwas$pos/50e6-1)),(0:4)/5,"+")*50e6
+win.50M.beg = win.50M.beg[win.50M.beg+50e6<=max(gwas$pos)]
 # Calculate the combined p-values for each window
 system.time({
-  p.1M = apply(win.1M.beg,c(1,2),function(beg) {
-    R = which(gwas$pos>=beg & gwas$pos<(beg+1e6))
+  p.50M = sapply(win.50M.beg,function(beg) {
+    R = which(gwas$pos>=beg & gwas$pos<(beg+50e6))
     p.hmp(gwas$p[R],gwas$w[R],L)
   })
 })
 # Calculate sums of weights for each combined test
 system.time({
-  w.1M = apply(win.1M.beg,c(1,2),function(beg) {
-    R = which(gwas$pos>=beg & gwas$pos<(beg+1e6))
+  w.50M = sapply(win.50M.beg,function(beg) {
+    R = which(gwas$pos>=beg & gwas$pos<(beg+50e6))
     sum(gwas$w[R])
   })
 })
 # Calculate adjusted p-value for each window
-p.1M.adj = p.1M/w.1M 
+p.50M.adj = p.50M/w.50M 
 
 ## ----winplot, exercise=TRUE, fig.width=7, fig.height=5-------------------
 # Took a few seconds, plotting over 312k points
 gwas$p.adj = gwas$p/gwas$w
 plot(gwas$pos/1e6,-log10(gwas$p.adj),pch=".",xlab="Position on chromosome 12 (megabases)",
   ylab="Adjusted significance (-log10 adjusted p-value)",
-  ylim=sort(-log10(range(gwas$p.adj,p.1M.adj,na.rm=TRUE)))) 
-arrows(win.1M.beg/1e6,-log10(p.1M.adj),(win.1M.beg+1e6)/1e6,len=0,col="green2",lwd=2)
+  ylim=sort(-log10(range(gwas$p.adj,p.50M.adj,na.rm=TRUE)))) 
+arrows(win.50M.beg/1e6,-log10(p.50M.adj),(win.50M.beg+50e6)/1e6,len=0,col="#D3C991",lwd=2)
 # Superimpose the significance threshold, alpha, e.g. alpha=0.05
 abline(h=-log10(0.05),col="black",lty=2)
+# When using the HMP to evaluate individual p-values, the HMP threshold must be used,
+# which is slightly more stringent than Bonferroni for individual tests
+abline(h=-log10(qharmonicmeanp(0.05,L)),col="grey",lty=2)
 # For comparison, plot the conventional GWAS threshold of 5e-8. Need to convert
 # this into the adjusted p-value scale. Instead of comparing each raw p-value
 # against a Bonferonni threshold of alpha/L=0.05/6524432, we would be comparing each
@@ -106,7 +116,7 @@ abline(h=-log10(0.05),col="black",lty=2)
 abline(h=-log10(0.3262216),col="grey",lty=3) 
 
 ## ----listpos, exercise=TRUE----------------------------------------------
-win.1M.beg[which(p.1M.adj<=0.05)]
+win.50M.beg[which(p.50M.adj<=0.05)]
 # Also list the position of the most significant individual (adjusted) p-value
 (peakpos = gwas$pos[gwas$p.adj==min(gwas$p.adj)])
 
@@ -131,6 +141,26 @@ R = which(abs(gwas$pos-peakpos)<wlen)
 wlen = 1e6
 R = which(abs(gwas$pos-peakpos)<wlen)
 (p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 10 megabases
+wlen = 1e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 20 megabases
+wlen = 2e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 30 megabases
+wlen = 3e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 40 megabases
+wlen = 4e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 50 megabases
+wlen = 5e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 
 ## ----optwin, exercise=TRUE-----------------------------------------------
 # Find the smallest window centred on position 118876918 significant at alpha=0.05
@@ -139,7 +169,7 @@ f = function(wlen) {
   p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R])
   return(p.R.adjust - 0.05)
 }
-(wlen.opt = uniroot(f,c(1e5,1e6))$root)
+(wlen.opt = uniroot(f,c(3e7,4e7))$root)
 # Show that the group of SNPs in this window is indeed significant
 wlen = wlen.opt
 R = which(abs(gwas$pos-peakpos)<wlen)

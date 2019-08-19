@@ -4,7 +4,7 @@
 Compute the Harmonic Mean \emph{p}-Value
 }
 \description{
-The harmonic mean \emph{p}-value (HMP) is defined as the inverse of the (possibly weighted) arithmetic mean of the inverse \emph{p}-values. When the HMP is small (e.g. less than 0.05), it is approximately well-calibrated, meaning that it can be directly interpreted. However, the function p.hmp calculates an exact \emph{p}-value from the HMP and is preferred.
+The harmonic mean \emph{p}-value (HMP) is defined as the inverse of the (possibly weighted) arithmetic mean of the inverse \emph{p}-values. When the HMP is small (e.g. less than 0.05), it is approximately well-calibrated, meaning that it can be directly interpreted. However, the function p.hmp calculates an asymptotically exact \emph{p}-value from the HMP and is preferred.
 }
 \usage{
 hmp.stat(p, w = NULL)

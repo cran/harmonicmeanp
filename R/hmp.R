@@ -4,16 +4,28 @@ hmp.stat = function(p, w = NULL) {
     if (is.null(w)) return(c(hmp.stat = 1/mean(1/p)))
     return(c(hmp.stat = sum(w)/sum(w/p)))
 }
-p.hmp = function(p, w = NULL, L = NULL) {
-    if(is.null(L)) {
+p.hmp = function(p, w = NULL, L = NULL, w.sum.tolerance = 1e-6, multilevel = TRUE) {
+    if(is.null(L) & multilevel) {
         warning("L not specified: for multilevel testing set L to the total number of individual p-values")
         L = length(p)
     }
     if(length(p) == 0) return(NA)
     if(length(p) > L) warning("The number of p-values cannot exceed L")
+    if(is.null(w)) {
+        w = rep(1/L,length(p))
+    } else if(any(w<0)) {
+        stop("No weights can be negative")
+    }
+    w.sum = sum(w)
+    if(w.sum>1+w.sum.tolerance) {
+        stop("Weights cannot exceed 1")
+    }
     HMP = hmp.stat(p, w)
     O.874 = 1 + digamma(1) - log(2/pi)
-    return(c(p.hmp = pEstable(1/HMP, setParam(alpha = 1, location = (log(L) + O.874), logscale = log(pi/2), pm = 0), lower.tail = FALSE)))
+    if(multilevel) {
+        return(c(p.hmp = w.sum*pEstable(w.sum/HMP, setParam(alpha = 1, location = (log(L) + O.874), logscale = log(pi/2), pm = 0), lower.tail = FALSE)))
+    }
+    return(c(p.hmp = pEstable(1/HMP, setParam(alpha = 1, location = (log(length(p)) + O.874), logscale = log(pi/2), pm = 0), lower.tail = FALSE)))
 }
 mamml.stat = function(R, w = NULL) {
     R = as.numeric(R)

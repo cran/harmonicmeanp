@@ -1,7 +1,7 @@
 ---
 title: "harmonicmeanp tutorial"
 author: "Daniel J. Wilson"
-date: "5 July 2019"
+date: "17 August 2019"
 output:
   html_document:
     df_print: default
@@ -19,7 +19,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 <!-- run with 
-library(rmarkdown); rmarkdown::render("~/Documents/Latex/MAMML/documentation/html/version2/hmpTutorial.Rmd") 
+library(rmarkdown); rmarkdown::render("hmpTutorial.Rmd") 
 -->
 <!-- all options for Rmarkdown: https://bookdown.org/yihui/rmarkdown/html-document.html -->
 <!-- The following block is to enable select-and-copy -->
@@ -58,19 +58,22 @@ knitr::opts_chunk$set(strip.white=FALSE,class.output="Routput",class.source="Rso
 # Overview
 ***
 
-Note this version of the tutorial addresses an error in the original paper in which the harmonic mean *p*-value for set $\mathcal{R}$ is compared against a threshold $\alpha_{|\mathcal{R}|}$, whereas $\alpha_L$ should be used. See correction: http://blog.danielwilson.me.uk/2019/07/correction-harmonic-mean-p-value-for.html
+Note this version of the R package and tutorial addresses two errors in the original paper:
+1) The harmonic mean *p*-value for set $\mathcal{R}$ should be compared against a threshold $\alpha_L$, not $\alpha_{|\mathcal{R}|}$.
+2) The mechanism for calculating asymptotically exact harmonic mean *p*-values was wrongly stated.
+The harmonicmeanp package version 2.0 only corrected error 1. Here both errors are addressed, and many of the results have changed quantitatively. In particular, correcting the errors makes the test less powerful than previously claimed for narrowing down regions of significance. See the updated correction for further information: http://blog.danielwilson.me.uk/2019/07/correction-harmonic-mean-p-value-for.html
 
 ***
 
-The harmonic mean *p*-value (HMP) is a method for performing a combined test of the null hypothesis that no *p*-value is significant (Wilson, 2019). Unlike Fisher's (1934) method, it is robust to dependence between the *p*-values, making it much more broadly applicable. Like Bonferroni correction, the HMP controls the strong-sense family-wise error rate (ssFWER), but it is potentially much more powerful. It is also more powerful than the BH procedure (Benjamini and Hochberg, 1995) which controls both the weak-sense family-wise error rate (wsFWER) and the false discovery rate (FDR), in the sense that the HMP tends to find one or more *p*-values or groups of *p*-values significant more often than BH procedure finds one or more *p*-values significant.
+The harmonic mean *p*-value (HMP) is a method for performing a combined test of the null hypothesis that no *p*-value is significant (Wilson, 2019). It is more robust to dependence between *p*-values than Fisher's (1934) method, making it more broadly applicable. Like Bonferroni correction, the HMP procedure controls the strong-sense family-wise error rate (ssFWER). It is more powerful than common alternatives including Bonferroni and Simes procedures when combining large proportions of all the *p*-values, at the cost of slightly lower power when combining small proportions of all the *p*-values. It rivals the power of the BH procedure (Benjamini and Hochberg, 1995) which controls both the weak-sense family-wise error rate (wsFWER) and the false discovery rate (FDR), in the sense that the HMP is expected to find one or more *p*-values or groups of *p*-values significant more often than the BH procedure finds one or more *p*-values significant.
 
 | Method     | Robust to dependence |                            | Indicative power[^1]                 |                                               |              | Controls     |              |
 |:----------:|:--------------------:|:--------------------------:|:------------------------------------:|:---------------------------------------------:|:------------:|:------------:|:------------:|
 |            |                      | Significance very rare     | Significance uncommon                | Significance common                           | FDR          | wsFWER       | ssFWER       |
 | Fisher     | $\times$             | $\bullet$                  | $\bullet\,\bullet\,\bullet\,\bullet$ | $\bullet\,\bullet\,\bullet\,\bullet\,\bullet$ | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 | HMP        | $\checkmark$         | $\bullet\,\bullet\,\circ$  | $\bullet\,\bullet\,\bullet$          | $\bullet\,\bullet\,\bullet\,\bullet$          | $\checkmark$ | $\checkmark$ | $\checkmark$ |
-| BH         | $\checkmark$         | $\bullet\,\bullet\,\circ$  | $\bullet\,\bullet\,\circ$            | $\bullet\,\bullet\,\circ$                     | $\checkmark$ | $\checkmark$ | $\times$     |
-| Bonferroni | $\checkmark$         | $\bullet\,\bullet\,\circ$  | $\bullet\,\bullet$                   | $\bullet\,\bullet$                            | $\checkmark$ | $\checkmark$ | $\checkmark$ |
+| BH         | $\checkmark\checkmark$         | $\bullet\,\bullet\,\circ$  | $\bullet\,\bullet\,\circ$            | $\bullet\,\bullet\,\circ$                     | $\checkmark$ | $\checkmark$ | $\times$     |
+| Bonferroni | $\checkmark\checkmark\checkmark$         | $\bullet\,\bullet\,\circ$  | $\bullet\,\bullet$                   | $\bullet\,\bullet$                            | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 
 [^1]: Wilson (2019) SI Appendix, Fig. S8. BH power has been equated with Simes' (1986), on which BH is based. Power is defined as the power of the combined test, or, for BH, the power to detect any significant hypotheses.
 
@@ -114,6 +117,11 @@ Once you have installed the package, load it in the usual way:
 library(harmonicmeanp)
 ```
 
+To check you have version 3.0 installed, type
+```{r checkversion, exercise=TRUE, eval=FALSE}
+stopifnot(packageVersion("harmonicmeanp")>=3.0)
+```
+
 # Example 1. Sliding Window Analysis
 
 Download the 312457 *p*-values from chromosome 12 of the genome-wide association study (GWAS) for neuroticism (Okbay et al., 2016). This file is an excerpt of http://ssgac.org/documents/Neuroticism_Full.txt.gz. For usage conditions see http://ssgac.org/documents/ReadMe_genetic_variants_associated_with_swb.txt. It took me a few seconds to download the data excerpt. The 8 megabyte file contains rs identifiers and SNP positions as per human genome build GRCh37/hg19 as well as the *p*-values.
@@ -133,7 +141,7 @@ R = 1:nrow(gwas)
 (HMP.R = sum(gwas$w[R])/sum(gwas$w[R]/gwas$p[R]))
 ```
 
-One of the remarkable properties of the HMP is that for small values (e.g. below 0.05), the HMP can be directly interpreted as a *p*-value (Wilson, 2019). Since the HMP equals $\overset{\circ}{p}_{\mathcal{R}}=0.0008734522$ it can be directly interpreted, suggesting it is strongly significant (before multiple testing correction). To test this formally, first the HMP significance threshold is computed. For that I will assume a false positive rate of $\alpha=0.05$, i.e. 5%.
+One of the remarkable properties of the HMP is that for small values (e.g. below 0.05), the HMP can be directly interpreted as a *p*-value *after adjusting for multiple comparisons*. That the HMP equals $\overset{\circ}{p}_{\mathcal{R}}=0.0008734522$ suggests it is strongly significant *before multiple testing correction*. To test this formally, first the HMP significance threshold is computed. For that I will assume a false positive rate of $\alpha=0.05$, i.e. 5%.
 
 ```{r hmpthreshold, exercise=TRUE}
 # Specify the false positive rate
@@ -150,17 +158,20 @@ w.R = sum(gwas$w[R])
 alpha.L * w.R
 ```
 
-Therefore we can reject the null hypothesis of no association on chromosome 12 at level $\alpha=0.05$ because 0.0008734522 is below 0.001241835.
+Therefore *after adjusting for multiple comparison* we can reject the null hypothesis of no association on chromosome 12 at level $\alpha=0.05$ because 0.0008734522 is below 0.001241835.
 
 An equivalent approach is to calculate an asymptotically exact *p*-value based on the HMP.
 
 ```{r phmp, exercise=TRUE}
 # Use p.hmp instead to compute the HMP test statistic and
 # calculate its asymptotically exact p-value in one step
-pharmonicmeanp(HMP.R, L=L, lower.tail=TRUE)
+# Note this line has changed because of a previous error.
+w.R*pharmonicmeanp(HMP.R/w.R, L=L, lower.tail=TRUE)
+# Compare it to the multiple testing threshold
+w.R*alpha
 ```
 
-As you can see, the asymptotically exact *p*-value of $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.00089113$ is very close to the HMP of $\overset{\circ}{p}_{\mathcal{R}}=0.0008734522$ because the HMP is much smaller than one. Note however that direct interpretation of the HMP is anti-conservative compared to the asymptotically exact test, which is why the HMP had to be compared directly to the more stringent threshold $\alpha_L=0.02593083$. The asymptotically exact *p*-value can be computed in one step:
+The asymptotically exact *p*-value of $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.001343897$ is close to the HMP of $\overset{\circ}{p}_{\mathcal{R}}=0.0008734522$ and also significant because it is below $0.002394515$. Note however that direct interpretation of the HMP is anti-conservative compared to the asymptotically exact test, which is why the HMP had to be compared directly to the more stringent threshold $\alpha_L=0.02593083$. The asymptotically exact *p*-value can be computed in one step:
 
 ```{r p.hmp, exercise=TRUE}
 # Note that the p.hmp function has been redefined to take argument L. Omitting L will issue a warning.
@@ -183,9 +194,9 @@ w.R = sum(gwas$w[R])
 alpha*w.R
 ```
 
-Unsurprisingly, in view of genetic linkage, the two tests are both significant: for even positions, the combined *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.0009190465$ which was less than the significance threshold of $\alpha\,w_{\mathcal{R}}=0.001200587$ and for odd positions, the combined *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.0008647167$ which was less than the significance threshold of $\alpha\,w_{\mathcal{R}}=0.001193928$.
+Neither of the two tests is significant individually: for even positions, the combined *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.002658581$ which was above the significance threshold of $\alpha\,w_{\mathcal{R}}=0.001200587$ and for odd positions, the combined *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}=0.00230653$ which was above the significance threshold of $\alpha\,w_{\mathcal{R}}=0.001193928$.
 
-Comparing *p*-values with different significance thresholds can be confusing. Instead, it is useful to calculate adjusted *p*-values, which are compared directly to the nominal significance threshold $\alpha$. An adjusted *p*-value is simply divided by its weight *w*. For example:
+Comparing *p*-values with different significance thresholds can be confusing. Instead, it is useful to calculate adjusted *p*-values, which are compared directly to $\alpha$, the intended strong-sense familywise error rate. An adjusted *p*-value is simply divided by its weight *w*. For example:
 
 ```{r oddsevens.adjust, exercise=TRUE}
 R = which(gwas$pos%%2==0)
@@ -198,7 +209,7 @@ w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 ```
 
-Now it is easy to see that we can rule out the null hypotheses of no significant *p*-values for both even-numbered and odd-numbered positions, assuming $\alpha=0.05$.
+Now it is easy to see that both tests are non-significant, assuming $\alpha=0.05$.
 
 Of course it makes little sense to combine *p*-values according to whether their position is an even or odd number. Instead we might wish to test the first 156229 SNPs on chromosome 12 separately from the second 156228 SNPs to begin to narrow down regions of significance.
 
@@ -213,29 +224,30 @@ w.R = sum(gwas$w[R])
 (p.R.adjust = p.R/w.R)
 ```
 
-This is much clearer: only in the second half of the chromosome can we reject the null hypothesis of no significant *p*-values at the $\alpha=0.05$ level. For the first half of the chromosome, the adjusted *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}/w_{\mathcal{R}}=12.1041$. While *p*-values must be 1 or below, adjusted *p*-values need not be. For the second half of the chromosome, the adjusted *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}/w_{\mathcal{R}}=0.01858945$ which is below the standard significance threshold of $\alpha=0.05$.
+This is much clearer: only in the second half of the chromosome can we reject the null hypothesis of no significant *p*-values at the $\alpha=0.05$ level. For the first half of the chromosome, the adjusted *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}/w_{\mathcal{R}}=1$. By the corrected definition of asymptotically exact HMPs, the adjusted *p*-value will not exceed 1, although in general while *p*-values must be 1 or below, adjusted *p*-values need not be. For the second half of the chromosome, the adjusted *p*-value was $p_{\overset{\circ}{p}_{\mathcal{R}}}/w_{\mathcal{R}}=0.02842931$ which is below the standard significance threshold of $\alpha=0.05$.
 
-Note that it was completely irrelevant that we had already performed tests of even- and odd-positioned SNPs: as mentioned above, the significance thresholds are pre-determined by the $w_{\mathcal{R}}$'s no matter how many subsets of *p*-values are tested and no matter in what combinations. We can test any subset of the *p*-values without incurring further multiple testing penalties. For example, let's test 1 megabase windows overlaping at 0.2 megabase intervals. Testing overlapping versus non-overlapping windows has no effect on the significance thresholds, but of course it has an effect on the resolution of our conclusions and on the computational time.
+Note that it was completely irrelevant that we had already performed tests of even- and odd-positioned SNPs: as mentioned above, the significance thresholds are pre-determined by the $w_{\mathcal{R}}$'s no matter how many subsets of *p*-values are tested and no matter in what combinations. We can test any subset of the *p*-values without incurring further multiple testing penalties. For example, let's test 50 megabase windows overlaping at 10 megabase intervals. Testing overlapping versus non-overlapping windows has no effect on the significance thresholds, but of course it has an effect on the resolution of our conclusions and on the computational time.
 
 ```{r win, exercise=TRUE}
-# Define overlapping sliding windows of 1 megabase at 0.2 megabase intervals
-win.1M.beg = outer(0:floor(max(gwas$pos/1e6)),(0:4)/5,"+")*1e6
+# Define overlapping sliding windows of 50 megabase at 10 megabase intervals
+win.50M.beg = outer(0:floor(max(gwas$pos/50e6-1)),(0:4)/5,"+")*50e6
+win.50M.beg = win.50M.beg[win.50M.beg+50e6<=max(gwas$pos)]
 # Calculate the combined p-values for each window
 system.time({
-  p.1M = apply(win.1M.beg,c(1,2),function(beg) {
-    R = which(gwas$pos>=beg & gwas$pos<(beg+1e6))
+  p.50M = sapply(win.50M.beg,function(beg) {
+    R = which(gwas$pos>=beg & gwas$pos<(beg+50e6))
     p.hmp(gwas$p[R],gwas$w[R],L)
   })
 })
 # Calculate sums of weights for each combined test
 system.time({
-  w.1M = apply(win.1M.beg,c(1,2),function(beg) {
-    R = which(gwas$pos>=beg & gwas$pos<(beg+1e6))
+  w.50M = sapply(win.50M.beg,function(beg) {
+    R = which(gwas$pos>=beg & gwas$pos<(beg+50e6))
     sum(gwas$w[R])
   })
 })
 # Calculate adjusted p-value for each window
-p.1M.adj = p.1M/w.1M 
+p.50M.adj = p.50M/w.50M 
 ```
 
 Now plot them
@@ -245,10 +257,13 @@ Now plot them
 gwas$p.adj = gwas$p/gwas$w
 plot(gwas$pos/1e6,-log10(gwas$p.adj),pch=".",xlab="Position on chromosome 12 (megabases)",
   ylab="Adjusted significance (-log10 adjusted p-value)",
-  ylim=sort(-log10(range(gwas$p.adj,p.1M.adj,na.rm=TRUE)))) 
-arrows(win.1M.beg/1e6,-log10(p.1M.adj),(win.1M.beg+1e6)/1e6,len=0,col="green2",lwd=2)
+  ylim=sort(-log10(range(gwas$p.adj,p.50M.adj,na.rm=TRUE)))) 
+arrows(win.50M.beg/1e6,-log10(p.50M.adj),(win.50M.beg+50e6)/1e6,len=0,col="#D3C991",lwd=2)
 # Superimpose the significance threshold, alpha, e.g. alpha=0.05
 abline(h=-log10(0.05),col="black",lty=2)
+# When using the HMP to evaluate individual p-values, the HMP threshold must be used,
+# which is slightly more stringent than Bonferroni for individual tests
+abline(h=-log10(qharmonicmeanp(0.05,L)),col="grey",lty=2)
 # For comparison, plot the conventional GWAS threshold of 5e-8. Need to convert
 # this into the adjusted p-value scale. Instead of comparing each raw p-value
 # against a Bonferonni threshold of alpha/L=0.05/6524432, we would be comparing each
@@ -257,17 +272,17 @@ abline(h=-log10(0.05),col="black",lty=2)
 abline(h=-log10(0.3262216),col="grey",lty=3) 
 ```
 
-The black dashed line shows the $\alpha=0.05$ significance threshold and the grey dotted line shows $\alpha=0.326$. Evaluating the adjusted *p*-values against the latter threshold produces a procedure equivalent to applying a threshold of $5\times10^{-8}$ to the raw *p*-values, which has been adopted as a convention in human GWAS.
+The black dashed line shows the $\alpha=0.05$ significance threshold. The grey dashed line shows the HMP threshold against which individual (i.e. single) *p*-values must be evaluated - this is the cost of using the HMP. (Equivalently, we could have plotted asymptotically exact *p*-values calculated from the individual tests, instead of the original individual *p*-values, and compared them directly to the black dashed line.) The grey dotted line shows $\alpha=0.326$. Evaluating the adjusted *p*-values against this third threshold produces a procedure equivalent to applying a threshold of $5\times10^{-8}$ to the raw *p*-values, which has been adopted as a convention in human GWAS.
 
-No SNPs are individually significant by either threshold. However, the HMP detects several 1 megabase regions of significance. List their positions
+No SNPs are individually significant by either threshold. However, the HMP detects several 50 megabase regions of significance. List their positions
 
 ```{r listpos, exercise=TRUE}
-win.1M.beg[which(p.1M.adj<=0.05)]
+win.50M.beg[which(p.50M.adj<=0.05)]
 # Also list the position of the most significant individual (adjusted) p-value
 (peakpos = gwas$pos[gwas$p.adj==min(gwas$p.adj)])
 ```
 
-As you can see, the genome-wide significant regions are consecutive windows spanning from megabases 118.0-118.6 to 119.0-119.6 on chromosome 12. Not too surprisingly, the region encompasses the most significant individual SNP at position 118876918.
+As you can see, the genome-wide significant regions are consecutive windows spanning from megabases 70-80 to 120-130 on chromosome 12. Not too surprisingly, the region encompasses the most significant individual SNP at position 118876918.
 
 A natural question is **can we identify the smallest groups of significant *p*-values?** As explained above, there is no penalty for conducting the extra combined tests required to answer this question because the significance thresholds are all predetermined. This is because conceptually the HMP is a multilevel test, meaning that when a combined test is conducted, all subsets of combined tests are implicitly performed at the same time - although to perform them explicitly requires additional computation.
 
@@ -294,9 +309,29 @@ R = which(abs(gwas$pos-peakpos)<wlen)
 wlen = 1e6
 R = which(abs(gwas$pos-peakpos)<wlen)
 (p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 10 megabases
+wlen = 1e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 20 megabases
+wlen = 2e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 30 megabases
+wlen = 3e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 40 megabases
+wlen = 4e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
+# Window of 50 megabases
+wlen = 5e7
+R = which(abs(gwas$pos-peakpos)<wlen)
+(p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R]))
 ```
 
-The 1 megabase window centred on position 118876918 is genome-wide significant at $\alpha=0.05$, but the 100 kilobase window is not. So this manual approach did not get us much closer. With the HMP, it is valid to use optimization to find the smallest significant group of SNPs centred on position 118876918.
+The 40 megabase window centred on position 118876918 is genome-wide significant at $\alpha=0.05$, but the 30 megabase window is not. So this manual approach did not get us much closer. With the HMP, it is valid to use optimization to find the smallest significant group of SNPs centred on position 118876918.
 
 ```{r optwin, exercise=TRUE}
 # Find the smallest window centred on position 118876918 significant at alpha=0.05
@@ -305,7 +340,7 @@ f = function(wlen) {
   p.R.adjust = p.hmp(gwas$p[R],gwas$w[R],L)/sum(gwas$w[R])
   return(p.R.adjust - 0.05)
 }
-(wlen.opt = uniroot(f,c(1e5,1e6))$root)
+(wlen.opt = uniroot(f,c(3e7,4e7))$root)
 # Show that the group of SNPs in this window is indeed significant
 wlen = wlen.opt
 R = which(abs(gwas$pos-peakpos)<wlen)
@@ -314,9 +349,9 @@ R = which(abs(gwas$pos-peakpos)<wlen)
 length(R)
 ```
 
-This shows that the smallest significant window occurs with window length 166197 base pairs and encompasses 820 SNPs. In this example, we have optimized in a highly constrained way, only testing combinations of *p*-values that correspond to consecutive SNPs centred on position 118876918. However, it would be conceptually valid, if computationally challenging, to test all combinations of *p*-values and report the smallest groups that are significant, after correcting for multiple testing, as always, by using the threshold $p_{\overset{\circ}{p}_{\mathcal{R}}}\leq\alpha\,w_{\mathcal{R}}$.
+This shows that the smallest significant window occurs with window length 37421465 base pairs and encompasses 125164 SNPs. In this example, we have optimized in a highly constrained way, only testing combinations of *p*-values that correspond to consecutive SNPs centred on position 118876918. However, it would be conceptually valid, if computationally challenging, to test all combinations of *p*-values and report the smallest groups that are significant, after correcting for multiple testing, as always, by using the threshold $p_{\overset{\circ}{p}_{\mathcal{R}}}\leq\alpha\,w_{\mathcal{R}}$.
 
-It turns out that the SNPs in this window, spanning chromosome 12 positions 118710721-119042500, overlap the genes TAOK3 and SUDS3. Searching the GWAS database reveals that SNPs in TAOK3 are associated with the following traits (https://www.ebi.ac.uk/gwas/genes/TAOK3):
+There are many genes in this 37.4 megabase window, spanning chromosome 12 positions 100166186-137587650, and although it includes genes TAOK3 and SUDS3 near the peak SNP, on which more information below, the large window size means other genes in the window could be responsible for the signal. Searching the GWAS database reveals that SNPs in TAOK3 are associated with the following traits (https://www.ebi.ac.uk/gwas/genes/TAOK3):
 
 - Blood protein levels
 
@@ -338,7 +373,7 @@ Likewise, SNPs in SUDS3 are associated with the following traits (https://www.eb
 
 - Hippocampal sclerosis
 
-The association between TAOK3 and neuroticism was reported in a meta-analysis involving 449,484 individuals (Nagel et al., 2018), 2.6 times as many as Okbay et al. (2016), on whose data alone the HMP reveals a genome-wide significant association overlapping this gene, albeit not at the individual SNP level.
+The association between TAOK3 and neuroticism was reported in a meta-analysis involving 449,484 individuals (Nagel et al., 2018), 2.6 times as many as Okbay et al. (2016), on whose data the HMP reveals a genome-wide significant association overlapping this gene, although the region identified is 37.4 megabases.
 
 # Example 2. Model-averaging in Regression
 
@@ -513,7 +548,7 @@ L = 12
 (p.comb.adj = p.comb/w.comb)
 ```
 
-So we find that, after multiple testing correction, there is a significant association between claw size and body size (p=0.001546837) at the $\alpha=0.05$ level. How does this compare to the individual tests (after multiple testing correction) and Bonferroni correction? [Note that Bonferroni correction is frequently used in both senses - to adjust individual *p*-values for multiple testing and to perform a combined test by taking the minimum of the adjusted *p*-values. HMP penalizes the individual tests more than Bonferroni.]
+So we find that, after multiple testing correction, there is a significant association between claw size and body size (p=0.001560334) at the $\alpha=0.05$ level. How does this compare to the individual tests (after multiple testing correction) and Bonferroni correction? [Note that Bonferroni correction is frequently used in both senses - to adjust individual *p*-values for multiple testing and to perform a combined test by taking the minimum of the adjusted *p*-values. HMP penalizes the individual tests more than Bonferroni.]
 
 ```{r bonferronibodysize, exercise=TRUE}
 (p.HMP.adj = Vectorize(p.hmp)(p,w,L)/w)
@@ -546,7 +581,7 @@ p.hmp(p,w,L)/sum(w)
 (p.Bonf = min(p.adj))
 ```
 
-We find that the descendants of ancestor A do have significantly different claw sizes from other species, taking into account uncertainty in the model, but the descendants of ancestor B do not.
+We find that the descendants of ancestor A do have significantly different claw sizes from other species, taking into account uncertainty in the model, but the descendants of ancestor B do not. In this case, the Bonferroni-adjusted *p*-value was slightly smaller than the HMP-adjusted asymptotically exact *p*-value.
 
 # Optimizing the Weights in the Comparative Phylogenetics Example
 
