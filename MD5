@@ -1,11 +1,11 @@
-9f8e550ad3da9659635c55179cd70693 *DESCRIPTION
+9e8647780be94674f928fcbe2b7a87cb *DESCRIPTION
 e93020804ebbde44c1212d7886c1af1c *NAMESPACE
 fda47abdf2a31a32f2ae6cf832fb16d9 *R/hmp.R
-cff3ad236a9729a2060f9874a4d294f9 *build/vignette.rds
+b3f51b7c711c2ad95950fa03852ccba0 *build/vignette.rds
 468fd70de76c636d529841ec74dddf3c *inst/CITATION
-c2af6dadc879b7e0e000e3f98f17d334 *inst/doc/harmonicmeanp.R
-4cf68a095749dd90fdfaa9b9bb8fa14b *inst/doc/harmonicmeanp.Rmd
-6571e7eafd98841c04ed8551f9763b68 *inst/doc/harmonicmeanp.html
+330571cb7dcd74f1c2e733f991360578 *inst/doc/harmonicmeanp.R
+43a7c880c6d8f5e569be6a7d2aa39be7 *inst/doc/harmonicmeanp.Rmd
+69dfe855b96711c76c5cb8ba64c50465 *inst/doc/harmonicmeanp.html
 646273d9c9b90e46620a2b5a51dc1f4c *man/harmonicmeanp.Rd
 d336995619a170774d2b46defa263829 *man/hmp.stat.Rd
 e701b14ae0521099f0d06e0a7a7945b0 *man/mamml.stat.Rd
@@ -14,4 +14,4 @@ d56f1f834fbb3a7a327a3fed834af2ad *man/p.mamml.Rd
 59ebc70e3815a0e016ffa2a5348fafbf *man/pLandau.Rd
 71bc87a173266cf45a3326b1584fef25 *man/pharmonicmeanp.Rd
 5d66b02a05f59842aa5e6297246847a7 *man/pmamml.Rd
-4cf68a095749dd90fdfaa9b9bb8fa14b *vignettes/harmonicmeanp.Rmd
+43a7c880c6d8f5e569be6a7d2aa39be7 *vignettes/harmonicmeanp.Rmd

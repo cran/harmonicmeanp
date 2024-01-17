@@ -1,7 +1,7 @@
 ---
 title: "harmonicmeanp tutorial"
 author: "Daniel J. Wilson"
-date: "17 August 2019"
+date: "16 January 2024"
 output:
   html_document:
     df_print: default
@@ -61,7 +61,7 @@ knitr::opts_chunk$set(strip.white=FALSE,class.output="Routput",class.source="Rso
 Note this version of the R package and tutorial addresses two errors in the original paper:
 1) The harmonic mean *p*-value for set $\mathcal{R}$ should be compared against a threshold $\alpha_L$, not $\alpha_{|\mathcal{R}|}$.
 2) The mechanism for calculating asymptotically exact harmonic mean *p*-values was wrongly stated.
-The harmonicmeanp package version 2.0 only corrected error 1. Here both errors are addressed, and many of the results have changed quantitatively. In particular, correcting the errors makes the test less powerful than previously claimed for narrowing down regions of significance. See the updated correction for further information: http://blog.danielwilson.me.uk/2019/07/correction-harmonic-mean-p-value-for.html
+The harmonicmeanp package version 2.0 only corrected error 1. Here both errors are addressed, and many of the results have changed quantitatively. In particular, correcting the errors makes the test less powerful than previously claimed for narrowing down regions of significance. See the updated correction for further information: https://blog.danielwilson.me.uk/2019/07/correction-harmonic-mean-p-value-for.html
 
 ***
 
@@ -124,10 +124,10 @@ stopifnot(packageVersion("harmonicmeanp")>=3.0)
 
 # Example 1. Sliding Window Analysis
 
-Download the 312457 *p*-values from chromosome 12 of the genome-wide association study (GWAS) for neuroticism (Okbay et al., 2016). This file is an excerpt of http://ssgac.org/documents/Neuroticism_Full.txt.gz. For usage conditions see http://ssgac.org/documents/ReadMe_genetic_variants_associated_with_swb.txt. It took me a few seconds to download the data excerpt. The 8 megabyte file contains rs identifiers and SNP positions as per human genome build GRCh37/hg19 as well as the *p*-values.
+Download the 312457 *p*-values from chromosome 12 of the genome-wide association study (GWAS) for neuroticism (Okbay et al., 2016). This file is an excerpt of the original data. It took me a few seconds to download the data excerpt. The 8 megabyte file contains rs identifiers and SNP positions as per human genome build GRCh37/hg19 as well as the *p*-values.
 
 ```{r download, exercise=TRUE}
-system.time((gwas = read.delim("http://www.danielwilson.me.uk/files/Neuroticism_ch12.txt",
+system.time((gwas = read.delim("https://www.danielwilson.me.uk/files/Neuroticism_ch12.txt",
   header=TRUE,as.is=TRUE)))
 head(gwas)
 ```
@@ -388,9 +388,8 @@ The phylogeny below shows the relationship between the five species of Fiddler c
 ```{r fiddler, exercise=TRUE, fig.width=4, fig.height=4}
 # Load the ape package for reading and plotting the tree
 library(ape)
-tree = read.tree((PIPE=pipe(
-'echo "(((chlorophthalmus:1,crassipes:1)A:1,(inversa:1,sindensis:1)B:1):1,argillicola:3);"'
-))); close(PIPE)
+tree = read.tree(text=
+"(((chlorophthalmus:1,crassipes:1)A:1,(inversa:1,sindensis:1)B:1):1,argillicola:3);")
 plot(tree, show.node.label=TRUE)
 
 log.carapace.breadth = c("chlorophthalmus"=1.02,"crassipes"=1.06,"inversa"=0.96,
